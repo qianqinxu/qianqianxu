@@ -1,0 +1,102 @@
+################################################################################
+##
+## <PROJ> EDH7916: Data visualization with ggplot2
+## <FILE> Xu_assignment_5
+## <INIT> 5 Feb 2020
+## <AUTH> Qianqinxu (GitHub/Twitter: @DearQianqianxu)
+##
+################################################################################
+
+## ---------------------------
+## libraries
+## ---------------------------
+
+library(tidyverse)
+library(haven)
+
+## ---------------------------
+## directory paths
+## ---------------------------
+
+## assume we're running this script from the ./scripts subdirectory
+dat_dir <- file.path("..", "data")
+tsc_dir <- file.path(dat_dir, "sch_test")
+
+## ---------------------------
+## input data
+## ---------------------------
+
+## assume we're running this script from the ./scripts subdirectory
+## read_dta() ==> read in Stata (*.dta) files
+## read_csv() ==> read in comma separated value (*.csv) files
+df_hs <- read_dta(file.path(dat_dir, "hsls_small.dta"))
+df_ts <- read_csv(file.path(tsc_dir, "all_schools.csv"))
+
+# 1 
+dat$x1hhnumber[dat$x1hhnumber<0] <- NA
+ggplot(dat, aes(x=x1hhnumber)) + geom_histogram() +
+  labs(x="Household Size")
+
+# The distribution is right skewed, most of the household size is 4.
+
+# 2 
+dat$x1ses[dat$x1ses==-8] <- NA
+dat$x4evratndclg[dat$x4evratndclg<0] <- NA
+dat %>% filter(!is.na(x4evratndclg)) %>%
+  filter(!is.na(x1ses)) %>%
+  mutate(college=as.factor(x4evratndclg)) %>%
+  ggplot(aes(x=college, y=x1ses)) + geom_boxplot() +
+  labs(y="student socioeconomic status")
+
+# the students who ever attended college have a higher socioeconomic status than the students
+# who have never attended the college.
+
+# 3
+dat %>%
+  mutate(region=case_when(
+    x1region==1~"Northeast",
+    x1region==2~"Midwest",
+    x1region==3~"South",
+    x1region==4~"West"
+  )) %>%
+  filter(x1paredexpct>=0) %>%
+  ggplot(aes(x=region, y=x1paredexpct)) + geom_boxplot()
+
+# as we can see from the plot, the difference between region is not significant, the median of west
+# is smaller than other regions.
+
+# 4
+dat %>% filter(x1txmtscor>=0) %>%
+  mutate(region=case_when(
+    x1region==1~"Northeast",
+    x1region==2~"Midwest",
+    x1region==3~"South",
+    x1region==4~"West"
+  )) %>%
+  ggplot(aes(x=x1txmtscor, y=x1ses)) +
+  geom_point() +
+  labs(x="Math test score", y="socioeconomic status") +
+  geom_smooth(method="lm")+
+  facet_wrap(~region)
+
+# the difference of the relationships between the regions is very small.
+
+# 5
+# then delay is more than 6 months
+dat %>% mutate(delay=ifelse(x4hs2psmos>6, "Delay", "Not Delay")) %>%
+  filter(x4evratndclg==1) %>%
+  ggplot(aes(x=delay, y=x1ses)) +
+  geom_boxplot() +
+  labs(y="socioeconomic status")
+
+
+# then delay is more than 12 months
+dat %>% mutate(delay=ifelse(x4hs2psmos>12, "Delay", "Not Delay")) %>%
+  filter(x4evratndclg==1) %>%
+  ggplot(aes(x=delay, y=x1ses)) +
+  geom_boxplot()+
+  labs(y="socioeconomic status")
+
+# the socioeconomic status of students who have not delay is higher than the students who have delay.
+
+## End
