@@ -1,0 +1,108 @@
+---
+################################################################################
+##
+## <PROJ> EDH7916
+## <FILE> Xu_assignment_6
+## <INIT> 16 Feb 2022
+## <AUTH> Qianqinxu (GitHub/Twitter: @DearQianqianxu)
+##
+################################################################################
+
+output:
+  pdf_document: default
+  html_document: default
+---
+
+
+```{r setup, echo=F, include=F, message=F, warning=F, error=F}
+## ---------------------------
+## libraries
+## ---------------------------
+library(knitr)
+library(tidyverse)
+
+## ---------------------------
+## settings/macros
+## ---------------------------
+
+## NB:
+## - echo (FALSE): don't repeat this code in output
+## - include (FALSE): run code, but don't include output (unless a plot)
+## - message (FALSE): don't output any messages
+## - warning (FALSE): don't output any warnings
+## - error (FALSE: don't output any errors
+##
+## We'll include these in the general knitr::opts_chunk() below, but
+## need them here to silence unnecessary output before we can set the options
+
+## set up knitr options
+opts_chunk$set(error = FALSE,
+               echo = FALSE,
+               include = FALSE,
+               message = FALSE,
+               warning = FALSE,
+               fig.path = "./figures/ts-", # where figures should be stored
+               dpi = 300,                  # print quality (300 standard for print)
+               out.width = "100%",         # figures should be as wide as margins
+               comment = NA)               # if code output, no comment char on LHS
+
+## ---------------------------
+## directory paths
+## ---------------------------
+
+## read in our data here, assuming we're in scripts like always
+dat_dir <- file.path(".", "data")
+```
+
+
+## Reading data 
+Reading the data from the csv file, and do some cleaning, since we only need two variables for later analysis, we will only keep the following two variables: x1stuedexpct and x1paredexpct.
+
+```{r input, warning=F,message=F}
+df <- read_csv(file.path(dat_dir, "hsls_small.csv"))
+df <- df[, c("x1stuedexpct", "x1paredexpct")]
+df <- df[df$x1stuedexpct>0, ]
+df <- df[df$x1paredexpct>0, ]
+colnames(df) <- c("stuedexpct", "paredexpct")
+```
+
+After cleaning, there are 16429 rows and 2 columns in the dataset.
+
+## Summary statistic
+
+```{r, include = T}
+df %>% gather(key=category, value=value) %>% group_by(category) %>%
+  summarise(n=n(), mean=mean(value), median=median(value), sd=sd(value)) %>%
+  knitr::kable(digits = 2, caption = "Summary Statistic")
+```
+
+Calculate the summary statistic of the education expectation for parents and students, the mean education expectation of the parents is 7.33, the mean education expectation of the students is 7.78,  the standard deviation of the education expectation for parents is 2.63, the standard deviation of the education expectation for students is 2.91.
+
+## Visualization
+
+```{r, include=T}
+df %>% gather(key=category, value=value)   %>%
+  ggplot(aes(x=category, y=value, fill=category)) +
+  geom_boxplot() +
+  labs(y="Education Expectation")
+```
+
+The boxplot suggests that the there is no difference in the education expecation between parents and students, the median value are quite similar.
+
+
+## Hypothesis
+
+State the hypothesis:
+
+$H_0: \mu_1=\mu_2$
+
+$H_a: \mu_1\neq\mu_2$
+
+```{r, include=T}
+t.test(df$stuedexpct, df$paredexpct)
+```
+
+Since the p-value is less than 0.05, we have sufficient evidence to reject the null hypothesis.
+
+## Conclusion
+The hypothesis suggests that there is a significant difference in the average education expecation for parents and students.
