@@ -1,0 +1,116 @@
+################################################################################
+##
+## <PROJ> assignment 7
+## <FILE> Qianqian Xu
+## <INIT> 21 February 2022
+## <AUTH> Qianqinxu (GitHub/Twitter: @DearQianqianxu)
+##
+################################################################################
+
+
+## ---------------------------
+## libraries
+## ---------------------------
+
+library(tidyverse)
+library(lubridate)
+
+## ---------------------------
+## directory paths
+## ---------------------------
+
+## assume we're running this script from the ./scripts subdirectory
+dat_dir <- file.path("..", "data")
+
+## ---------------------------
+## input
+## ---------------------------
+
+## read in data and lower all names using rename_all(tolower)
+df <- read_csv(file.path(dat_dir, "hd2007.csv")) %>%
+  rename_all(tolower)
+
+df <- read_csv(file.path(dat_dir, "ic2007mission.csv"))
+  
+## -----------------------------------------------------------------------------
+## Working with strings
+## -----------------------------------------------------------------------------
+
+
+## Question 1 How many chief administrator names start with “Dr.”?
+
+hd2007 <- read.csv("hd2007.csv")
+ic2007mission <- read.csv("ic2007mission.csv")
+hd2007 <- hd2007 %>% rename_all(tolower)
+dat <- left_join(hd2007, ic2007mission)
+dat %>% filter(str_detect(chfnm, "^Dr\\.")) %>% summarise(n=n_distinct(chfnm))
+
+# There are 647 chief administrator names start with "Dr.".
+
+## Question 2 How many chief administrator names end with the title “PH.D.” or some variant?
+
+dat %>% select(chfnm) %>% 
+  filter(str_detect(chfnm, "[pP][Hh]\\.?[dD]$")) %>% summarise(n=n_distinct(chfnm))
+
+# There are 44 chief administrator names end with the title "PH.D." or some variant.
+
+## Question 3 Among those schools that give their mission statement:
+## (1) How many repeat their institutional name in their mission statement?
+
+dat %>% filter(str_detect(mission, "College|University|School|Institute")) %>% nrow()
+
+# 2103 repeat their institutional name in their mission statement.
+
+## (2) How many use the word civic?
+
+dat %>% filter(str_detect(mission, "civic")) %>% nrow()
+
+# 47 use the word civic
+
+## (3)Which top 3 states have the most schools with mission statements that use the word future?
+
+dat %>% filter(str_detect(mission, "future")) %>% group_by(stabbr) %>%
+  summarise(n=n()) %>%
+  arrange(desc(n))
+
+# CA, OH and PA.
+
+## (4)Which type of schools (public, private-non-profit, private-for-profit) are most likely to use the word skill in their mission statement?
+
+dat %>% filter(control>0) %>%
+  filter(str_detect(mission, "skill")) %>% group_by(control) %>% summarise(count=n())
+
+# private-for-profit
+
+## Question 4 Among the schools that closed in 2007 or 2008 and give a date with at least a month and year:
+## (1)Which has been closed for the longest time? How many months has it been from its close date to the beginning of this current month (1 February 2020)?
+
+library(lubridate)
+df <- dat %>%
+  filter(closedat != -2)
+df <- df %>%
+  mutate(closedat_dt = mdy(closedat))
+df <- df %>%
+  mutate(closedat_fix = str_replace(closedat, "-", "-01-"),
+         closedat_fix_dt = mdy(closedat_fix))
+df <- df %>%
+  mutate(close_year = year(closedat_fix_dt),
+         close_month = month(closedat_fix_dt),
+         close_day = day(closedat_fix_dt),
+         close_dow = wday(closedat_fix_dt, label = TRUE))
+df %>% filter(!is.na(closedat_fix_dt)) %>% mutate(time=ymd("2020-02-01")-closedat_fix_dt) %>%
+  arrange(desc(time)) %>% mutate(month=round(as.numeric(time/31))) %>%
+  head(1)
+# City College Inc has been closed for 152 months.
+
+## (2)How many days were there between the first school to close and the last?
+dates <- df %>% filter(!is.na(closedat_fix_dt))  %>% arrange(closedat_fix_dt) %>% 
+  pull(closedat_fix_dt)
+
+dates[length(dates)]-dates[1]
+
+# 436 days
+
+## -----------------------------------------------------------------------------
+## end script
+################################################################################
