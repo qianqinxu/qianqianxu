@@ -1,0 +1,101 @@
+---
+title: "Initial analyses"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 1 Data preprocessing
+
+## 1.1 Reads in the data set that contains your dependent variable
+```{r}
+qs<-read.csv("qs-world-university-rankings-2017-to-2022-V2.csv")
+str(qs)
+```
+```{r}
+head(qs)
+```
+
+
+## 1.2 Handling missing values
+```{r}
+sum(!is.na(complete.cases(qs)))
+```
+```{r}
+library(tidyverse)
+#Converts missing values to NA
+qs$size<-ifelse(qs$size=="",NA,qs$size)
+qs$type<-ifelse(qs$type=="",NA,qs$type)
+qs$research_output<-ifelse(qs$research_output=="",NA,qs$research_output)
+```
+
+## Remove the thousandth sign
+```{r}
+qs$international_students<-gsub(",","",qs$international_students) %>% as.integer()
+qs$faculty_count<-gsub(",","",qs$faculty_count) %>% as.integer()
+
+```
+
+
+
+# 2 visualization
+
+## 2.1 A univariate graphic describing the dependent variable
+```{r}
+library(ggplot2)
+#A histogram of the distribution of scores
+ggplot(qs,aes(score))+geom_histogram()
+```
+
+## 2.2 The conditional mean of your dependent variable at levels of at least one independent variable 
+
+```{r}
+#the box plot of scores of universities at different levels of study
+ggplot(qs[!is.na(qs$research_output),],aes(research_output,score))+geom_boxplot(aes(fill=research_output))
+
+
+```
+
+## 2.3 The distribution of your dependent variable at levels of at least one independent variable 
+```{r}
+#The score density curve of universities with different campus sizes
+ggplot(qs[!is.na(qs$score),],aes(score))+geom_density(aes(colour=size))
+```
+
+## 2.4 A bivariate graphic that compares your dependent variable with at least one other independent variable
+```{r}
+#A scatter chart of international student numbers and university ratings at different public and private universities
+ggplot(qs[!is.na(qs$score),],aes(international_students,score))+geom_jitter(aes(colour=type))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
